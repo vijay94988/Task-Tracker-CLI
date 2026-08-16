@@ -1,0 +1,11 @@
+# macOS system files
+.DS_Store
+
+# Local task database (keep your personal tasks private)
+task.json
+
+# Python bytecode & environments
+__pycache__/
+*.pyc
+.venv/
+env/
