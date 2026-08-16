@@ -38,4 +38,4 @@ python3 test-cli.py delete 1
 
 
 
-https://roadmap.sh/projects/task-tracker
+Project idea: https://roadmap.sh/projects/task-tracker
