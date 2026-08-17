@@ -4,143 +4,178 @@ import json
 import sys
 from datetime import datetime
 
-print(
-'''    
-╔══════════════════════════════════════════╗
-║               Task Tracker               ║
-╚══════════════════════════════════════════╝
-''')
 
-if len(sys.argv) < 2:
-    sys.exit("Error: Please, Pass at least ONE Argument!!")
-else:
-    command = sys.argv[1]
 
-if command == "add":
+DATA_FILE = "task.json"
+
+def load_tasks():
     try:
-        with open("task.json", "r") as file:
-            data = json.load(file)
+        with open(DATA_FILE, "r") as f:
+            return json.load(f)
     except FileNotFoundError:
-        data = []
+        return []
+
+
+def save_tasks(task_data):
+    with open(DATA_FILE, "w") as f:
+        json.dump(task_data, f)
+
+
+def find_task(tasks, task_id):
+    return next((item for item in tasks if item["id"] == task_id), None)
+
+
+def int_task_id(raw_value):
+    try:
+        return int(raw_value)
+    except ValueError:
+        return None
+
+
+def add_task(description):
+    data = load_tasks()
     next_id = max((item["id"] for item in data), default=0) + 1
-    if len(sys.argv) < 3:
-        sys.exit("Error: Please provide a task Description!!")
-    else:
-        description = sys.argv[2]
-        k = {"id": next_id, "description": description, "status": "todo", "createdAt": datetime.now().isoformat(), "updatedAt": datetime.now().isoformat()}
-        data.append(k)
 
-    with open("task.json", "w") as file:
-        json.dump(data, file)
-    print("Task added successfully :)")
+    new_task = {
+        "id": next_id,
+        "description": description,
+        "status": "todo",
+        "createdAt": datetime.now().isoformat(),
+        "updatedAt": datetime.now().isoformat()
+    }
+    data.append(new_task)
+    save_tasks(data)
+    print(f"Task successfully added (ID: {next_id}) :)")
 
 
-elif command == "update" :
-    if len(sys.argv) < 4:
-        sys.exit("Error: Please provide a task ID and description!!")
-    try:
-        with open("task.json", "r") as file:
-            data = json.load(file)
-    except FileNotFoundError:
-        data = []
-    get_id = sys.argv[2]
-    try:
-        typecast = int(get_id)
-    except ValueError:
-        sys.exit("Please provide a valid task ID!!")
-    new_description = sys.argv[3]
-    find_id = next((item for item in data if item["id"] == typecast), None)
-    if find_id is None:
+def delete_task(task_id):
+    data = load_tasks()
+    task = find_task(data, task_id)
+    if task is None:
         print("Task not found :(")
-    else:
-        find_id["description"] = new_description
-        find_id["updatedAt"] = datetime.now().isoformat()
-        with open("task.json", "w") as file:
-            json.dump(data, file)
-        print("Task Updated :)")
+        return
 
-elif command == "delete" :
-    if len(sys.argv) < 3:
-        sys.exit("Error: Please provide a task ID!!")
-    try:
-        with open("task.json", "r") as file:
-            data = json.load(file)
-    except FileNotFoundError:
-        data = []
-    try:
-        typecast = int(sys.argv[2])
-    except ValueError:
-        sys.exit("Please provide task ID!!")
+    data = [item for item in data if item["id"] != task_id]
+    save_tasks(data)
+    print("Task successfully deleted :)")
 
-    find_id = next((item for item in data if item["id"] == typecast), None)
-    if find_id is None:
+
+def update_task(task_id, new_description):
+    data = load_tasks()
+    task = find_task(data, task_id)
+    if task is None:
         print("Task not found :(")
-    else:
-        data = [item for item in data if item["id"] != typecast]
-        with open("task.json", "w") as file:
-            json.dump(data, file)
-        print("Task Deleted Successful :)\n")
+        return
 
-elif command == "mark-in-progress" :
-    if len(sys.argv) < 3:
-        sys.exit("Error: Please provide a task ID!!")
-    try:
-        with open("task.json", "r") as file:
-            data = json.load(file)
-    except FileNotFoundError:
-        data = []
-    get_id = sys.argv[2]
-    try:
-        typecast = int(get_id)
-    except ValueError:
-        sys.exit("Please provide task ID!!")
-    find_id = next((item for item in data if item["id"] == typecast), None)
-    if find_id is None:
+    task["description"] = new_description
+    task["updatedAt"] = datetime.now().isoformat()
+    save_tasks(data)
+    print("Task successfully updated :)")
+
+
+def change_status(task_id, new_status):
+    data = load_tasks()
+    task = find_task(data, task_id)
+    if task is None:
         print("Task not found :(")
-    else:
-        find_id["status"] = "in-progress"
-        find_id["updatedAt"] = datetime.now().isoformat()
-        with open("task.json", "w") as file:
-            json.dump(data, file)
-        print("Task Status Updated :)")
+        return
 
-elif command == "mark-done" :
-    if len(sys.argv) < 3:
-        sys.exit("Error: Please provide a task ID!!")
-    try:
-        with open("task.json", "r") as file:
-            data = json.load(file)
-    except FileNotFoundError:
-        data = []
-    get_id = sys.argv[2]
-    try:
-        typecast = int(get_id)
-    except ValueError:
-        sys.exit("Please provide task ID!!")
-    find_id = next((item for item in data if item["id"] == typecast), None)
-    if find_id is None:
-        print("Task not found :(")
-    else:
-        find_id["status"] = "done"
-        find_id["updatedAt"] = datetime.now().isoformat()
-        with open("task.json", "w") as file:
-            json.dump(data, file)
-        print("Task Status Updated :)")
+    task["status"] = new_status
+    task["updatedAt"] = datetime.now().isoformat()
+    save_tasks(data)
+    print("Task status successfully updated :)")
 
-elif command == "list":
-    try:
-        with open("task.json", "r") as file:
-            data = json.load(file)
-    except FileNotFoundError:
-        sys.exit("List is Empty!!")
-    if len(sys.argv) >=3:
-        filtered = [item for item in data if item["status"] == sys.argv[2]]
+
+def list_tasks(status_filter=None):
+    data = load_tasks()
+    if status_filter:
+        filtered = [item for item in data if item["status"] == status_filter]
     else:
         filtered = data
+
+    if not filtered:
+        print("List is empty!!")
+        return
+
     for item in filtered:
         print(f'{item["id"]}. {item["description"]}  |  '
               f'Status: {item["status"]}\n'
               f'\nCreated: {item["createdAt"]} | Updated: {item["updatedAt"]}\n')
 
-else:
-    print("Error: Unknown Command!!")
+
+
+def main():
+    print(
+        '''    
+        ╔══════════════════════════════════════════╗
+        ║               Task Tracker               ║
+        ╚══════════════════════════════════════════╝
+        ''')
+
+    if len(sys.argv) < 2:
+        sys.exit("Error: Please, Pass at least ONE Argument!!")
+
+    command = sys.argv[1]
+
+
+    if command == "add":
+        if len(sys.argv) < 3:
+            sys.exit("Error: Please provide a task Description!!")
+        add_task(sys.argv[2])
+
+
+    elif command == "delete":
+        if len(sys.argv) < 3:
+            sys.exit("Error: Please provide a task ID!!")
+
+        task_id = int_task_id(sys.argv[2])
+        if task_id is None:
+            sys.exit("Error: Task ID must be a number!! ")
+
+        delete_task(task_id)
+
+
+    elif command == "update":
+        if len(sys.argv) < 4:
+            sys.exit("Error: Please provide a task ID and description!!")
+        task_id = int_task_id(sys.argv[2])
+        if task_id is None:
+            sys.exit("Error: Task ID must be a number!! ")
+
+        update_task(task_id, sys.argv[3])
+
+
+    elif command == "mark-in-progress":
+        if len(sys.argv) < 3:
+            sys.exit("Error: Please provide a task ID!!")
+        task_id = int_task_id(sys.argv[2])
+        if task_id is None:
+            sys.exit("Error: Task ID must be a number!! ")
+
+        change_status(task_id, "in-progress")
+
+
+    elif command == "mark-done":
+        if len(sys.argv) < 3:
+            sys.exit("Error: Please provide a task ID!!")
+        task_id = int_task_id(sys.argv[2])
+        if task_id is None:
+            sys.exit("Error: Task ID must be a number!! ")
+
+        change_status(task_id, "done")
+
+
+    elif command == "list":
+        status_filter = sys.argv[2] if len(sys.argv) >= 3 else None
+        if status_filter not in (None, "todo", "in-progress", "done"):
+            sys.exit("Error: Invalid status. Use todo, in-progress, or done!!")
+        list_tasks(status_filter)
+
+
+    else:
+        print("Error: Unknown Command!!")
+
+
+
+if __name__ == "__main__":
+    main()
